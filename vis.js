@@ -1,6 +1,6 @@
-/* window.onload = function() {
+window.onload = function() {
 	resizeApp();
-}; */
+};
 
 const visLayer = document.getElementById("cnvLayer1");
 const uiLayer = document.getElementById("cnvLayer2");
