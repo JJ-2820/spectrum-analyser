@@ -1,7 +1,3 @@
-window.onload = function() {
-	resizeApp();
-};
-
 const visLayer = document.getElementById("cnvLayer1");
 const uiLayer = document.getElementById("cnvLayer2");
 const textLayer = document.getElementById("cnvLayer3");
@@ -17,24 +13,25 @@ var barWidth;
 var x = []; //Array of precomputed x values
 var y = []; //Array of y values from FFTANALYZER
 
-window.addEventListener("resize", resizeApp);
-// canvas.addEventListener('mousemove', function(evt) {
-// 		var mousePos = getMousePos(ctx1, evt);
-// 		var message = 'Mouse position: ' + mousePos.x + ',' + mousePos.y;
-// 		writeMessage(canvas, message);
-// 	}, false);
+window.addEventListener("resize", initApp);
+
+window.onload = function() {
+	initApp();
+	document.documentElement.style.overflow = 'hidden';  // firefox, chrome
+	document.body.scroll = "no"; // ie only
+}
 
 file.onchange = function(){
 	const files = this.files;
-    console.log('FILES[0]: ', files[0])
-    audio.src = URL.createObjectURL(files[0]);
-    FFTANALYSER.init();
-	resizeApp();
+	console.log('FILES[0]: ', files[0])
+	audio.src = URL.createObjectURL(files[0]);
+	FFTANALYSER.init();
+	initApp();
 	audio.play();
 	main();
 }
 
-function resizeApp() {
+function initApp() {
 	var playerHeight = document.getElementById('audio').scrollHeight;
 	visLayer.width = window.innerWidth;
 	visLayer.height = window.innerHeight - playerHeight;
@@ -50,9 +47,6 @@ function resizeApp() {
 	audio.style.marginTop = h.toString() + "px";
 	h = window.innerHeight - playerHeight + 9;
 	file.style.marginTop = h.toString() + "px";
-
-	document.documentElement.style.overflow = 'hidden';  // firefox, chrome
-	document.body.scroll = "no"; // ie only
 
 	x = new Float32Array(computeLogX());
 	y = new Uint8Array(FFTANALYSER.getData());
@@ -75,50 +69,49 @@ function main() {
 
 function binGraph() {
 
-	var barHeight;
+	var power;
 	var hue;
 	y = FFTANALYSER.getData();
 
 	for (var i = 0; i < x.length; i++) {
-		barHeight = HEIGHT * (y[i] / 255);
+		power = HEIGHT * (y[i] / 255);
 		barWidth = (WIDTH / x.length);
 		if (barWidth < 1.0) {barWidth = 1.0};
 		
 		hue = y[i];
 		ctx1.fillStyle = `hsl(${hue},100%,50%)`;
-		ctx1.fillRect(x[i],(HEIGHT - barHeight), barWidth, barHeight);
+		ctx1.fillRect(x[i],(HEIGHT - power), barWidth, power);
 	}
 }
 
 function lineGraph() {
 
-	var barHeight;
+	var power;
 	var hue;
 	y = FFTANALYSER.getData();
 	var previousX = 0;
 	var previousY = 0;
 
 	ctx1.beginPath();
+	ctx1.lineWidth = 2;
+	ctx1.moveTo(x[1] - 1, HEIGHT + 1);
 
 	for (var i = 1; i < x.length; i++) {
-		barHeight = HEIGHT * (y[i] / 255);
-		var startY = HEIGHT * (y[i] / 255);
-		var endY = HEIGHT * (y[i - 1] / 255);
-
-		ctx1.moveTo(x[i], (HEIGHT - startY));
-		ctx1.lineTo(previousX, (HEIGHT - endY));
-
-		previousX = x[i];
-		previousY = y[i];
+		power = HEIGHT * (y[i] / 255);
+		ctx1.lineTo(x[i], (HEIGHT - power) + 1);
 	}
 
+	ctx1.lineTo(WIDTH + 1, HEIGHT + 1);
+
+	var alpha = 1.0;
 	var gradient = ctx1.createLinearGradient(0, HEIGHT, 0, 0);
-	gradient.addColorStop("0.166", `rgba(35,210,255,1)`);
-	gradient.addColorStop("0.333", `rgba(74,104,247,1)`);
-	gradient.addColorStop("0.50", `rgba(133,80,255,1)`);
-	gradient.addColorStop("0.666", `rgba(198,59,243,1)`);
-	gradient.addColorStop("0.833", `rgba(250,84,118,1)`);
-	gradient.addColorStop("1.0", `rgba(255,223,67,1)`);
+	gradient.addColorStop("0.166", `rgba(35,210,255,${alpha})`);
+	gradient.addColorStop("0.333", `rgba(74,104,247,${alpha})`);
+	gradient.addColorStop("0.50", `rgba(133,80,255,${alpha})`);
+	gradient.addColorStop("0.666", `rgba(198,59,243,${alpha})`);
+	gradient.addColorStop("0.833", `rgba(250,84,118,${alpha})`);
+	gradient.addColorStop("1.0", `rgba(255,223,67,${alpha})`);
+
 	ctx1.closePath();
 	ctx1.strokeStyle = gradient;
 	ctx1.stroke();
@@ -150,8 +143,8 @@ function computeLogX() {
 	var fftSize = FFTANALYSER.getSize();
 	for (var i = 0; i < fftSize; i++) {
 		var nyquist = 22050.0000;
-		var logMax = Math.log10(nyquist / 15);
-		var log = Math.log10((i / 15) * nyquist / fftSize);
+		var logMax = Math.log10(nyquist / 8);
+		var log = Math.log10((i / 8) * nyquist / fftSize);
 		logX.push(log / logMax * WIDTH);
 	}
 	return logX;
@@ -184,5 +177,5 @@ function getMousePos(canvas, evt) {
 	return {
 		x: evt.clientX - rect.left,
 		y: evt.clientY - rect.top
-	};
+	}
 }
